@@ -7,7 +7,7 @@ def read_results_data(file_path):
     data = pd.read_csv(file_path)
     return data
 
-def generate_email_content(name, subject_marks,percentage):
+def generate_email_content(name, subject_marks,percentage,Final_result):
     # HTML header and footer
     html_header = """
     <!DOCTYPE html>
@@ -58,6 +58,12 @@ def generate_email_content(name, subject_marks,percentage):
                 background-color: #3498db;
                 color: #fff;
             }
+          .result-info {
+                text-align: center;
+                margin-top: 20px;
+                margin-left: auto; 
+                margin-right: 10px;
+                }
 
             .footer {
                 text-align: center;
@@ -68,7 +74,7 @@ def generate_email_content(name, subject_marks,percentage):
     <body>
         <div class="header">
             <h1>Exam Results</h1>
-            <p>Dear""" + f"{name}" +""", here are your exam results:</p>
+            <p>Dear """ + f"{name}" +""", here are your exam results:</p>
         </div>
 
         <div class="table-container">
@@ -76,15 +82,21 @@ def generate_email_content(name, subject_marks,percentage):
                 <tr>
                     <th>Subject</th>
                     <th>Marks</th>
+                    <th>result</th>
                 </tr>
                 """ + f"{subject_marks}" +"""
             </table>
         </div>
+         <div class="result-info">
+            <p>Your overall percentage is <b>""" + f"{percentage}%" +"""</b></p>
+            <p>Final Result  is <b>""" + f"{Final_result}" +"""</b></p>
+        </div>
+    
     """
 
     html_footer = """
         <div class="footer">
-            <p>Your overall percentage is """ + f"{percentage}%" +"""</p>
+            
             <p>Contact us for more information: <a href="mailto:info@example.com">info@example.com</a></p>
             <p>&copy; 2023 Your Company. All rights reserved.</p>
         </div>
@@ -100,7 +112,7 @@ def send_result_email(subject, body, to_email):
     # SMTP configuration
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587
-    smtp_username = 'yourname@gmail.com'
+    smtp_username = '<yourEMail>'
     smtp_password = ''
 
     # Create the email message
@@ -143,15 +155,33 @@ def send_exam_result_emails(file_path):
         }
 
         # Generate the subject-wise marks table
+        result=""
+        Final_result=""
         table_rows = ""
         for subject, marks in subject_marks.items():
-            table_rows += f"<tr><td>{subject}</td><td>{marks}</td></tr>"
-
+            if marks>=35:
+                result="Pass"
+                table_rows += f"<tr><td>{subject}</td><td>{marks}</td><td>{result}</td></tr>"
+            else:
+                result="Fail"
+                Final_result="Fail"
+                table_rows += f"<tr><td>{subject}</td><td>{marks}</td><td>{result}</td></tr>"
         # Generate the overall percentage
         overall_percentage = calculate_percentage(subject_marks)
+        if Final_result != "Fail":
+            if overall_percentage >=80.0:
+                Final_result= "Distiction"
+            elif overall_percentage >=60:
+                Final_result= "First Class"
+            elif overall_percentage >=40:
+                Final_result= "Second class"
+            elif overall_percentage>=35:
+                Final_result="Pass"
+        else:
+            Final_result="Fail"
 
         # Generate the email content
-        email_body = generate_email_content(student_name, table_rows.format(subject_marks), overall_percentage)
+        email_body = generate_email_content(student_name, table_rows.format(subject_marks), overall_percentage,Final_result)
 
         # Send the email
         email_subject = "Exam Results Notification"
