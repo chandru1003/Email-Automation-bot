@@ -112,7 +112,7 @@ def send_result_email(subject, body, to_email):
     # SMTP configuration
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587
-    smtp_username = '<yourEMail>'
+    smtp_username = '<yourEmail>'
     smtp_password = ''
 
     # Create the email message
