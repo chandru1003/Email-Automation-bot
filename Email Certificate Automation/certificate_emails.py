@@ -1,3 +1,4 @@
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -9,6 +10,27 @@ from datetime import datetime
 # Function to read participant data from CSV
 def read_participant_data(file_path):
     return pd.read_csv(file_path)
+
+def generate_certificate(participant_name):
+    pdf_file_path = f"Email Certificate Automation\{participant_name}_Certificate.pdf"
+    
+    # Create a PDF document
+    c = canvas.Canvas(pdf_file_path)
+    
+    # Add content to the PDF (customize as needed)
+    c.drawString(100, 750, f"Certificate of Participation")
+    c.drawString(100, 730, f"This is to certify that")
+    c.drawString(100, 710, f"{participant_name}")
+    c.drawString(100, 690, f"has successfully attended the event.")
+    
+    # Add date
+    c.drawString(400, 690, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+    
+    
+    
+    c.save()
+    
+    return pdf_file_path
 
 def generate_email_content(name):
     html_body=""" <!DOCTYPE html>
@@ -72,7 +94,7 @@ def generate_email_content(name):
 """
     return html_body
 # Function to send an email with certificate attachment
-def send_email(to_email, body):
+def send_email(to_email, body,certificate_path):
     # Set up your email configuration
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587
@@ -84,6 +106,12 @@ def send_email(to_email, body):
     message['From'] = smtp_username
     message['To'] = to_email
     message['Subject'] = 'Thanks for Attending!'  
+    
+    # Attach the certificate PDF to the email
+    with open(certificate_path, 'rb') as certificate_file:
+        certificate_attachment = MIMEApplication(certificate_file.read(), _subtype="pdf")
+        certificate_attachment.add_header('Content-Disposition', f'attachment; filename={participant_name}_Certificate.pdf')
+        message.attach(certificate_attachment)
     
     # Attach the HTML body to the email
     message.attach(MIMEText(body, 'html'))
@@ -102,7 +130,8 @@ for index, row in participant_data.iterrows():
     participant_name = row['Name']
     participant_email = row['Email']    
     html_mail=generate_email_content(participant_name)   
-    send_email(participant_email, html_mail)
+    certificate_path = generate_certificate(participant_name)
+    send_email(participant_email, html_mail,certificate_path)
 
    
 
