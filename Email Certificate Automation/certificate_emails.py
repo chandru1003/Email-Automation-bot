@@ -1,4 +1,5 @@
 import os
+from PyPDF2 import PdfWriter, PdfFileReader
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -11,26 +12,37 @@ from datetime import datetime
 def read_participant_data(file_path):
     return pd.read_csv(file_path)
 
-def generate_certificate(participant_name):
-    pdf_file_path = f"Email Certificate Automation\{participant_name}_Certificate.pdf"
-    
-    # Create a PDF document
-    c = canvas.Canvas(pdf_file_path)
-    
-    # Add content to the PDF (customize as needed)
-    c.drawString(100, 750, f"Certificate of Participation")
-    c.drawString(100, 730, f"This is to certify that")
-    c.drawString(100, 710, f"{participant_name}")
-    c.drawString(100, 690, f"has successfully attended the event.")
-    
-    # Add date
-    c.drawString(400, 690, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
-    
-    
-    
-    c.save()
-    
-    return pdf_file_path
+def generate_certificate(template_path, output_folder, participant):
+    # Create a PDF document by merging the template with participant details
+    output_path = os.path.join(output_folder, f"{participant}_Certificate.pdf")
+
+    with open(template_path, 'rb') as template_file, open(output_path, 'wb') as output_file:
+        template_pdf = PdfFileReader(template_file)
+        output_pdf = PdfWriter()
+
+        # Copy pages from the template
+        for page_num in range(template_pdf.getNumPages()):
+            template_page = template_pdf.getPage(page_num)
+            output_pdf.addPage(template_page)
+
+        # Create a new canvas to draw on the PDF
+        c = canvas.Canvas(output_file)
+
+        # Add participant details to the certificate
+        c.drawString(100, 750, f"Certificate of Participation for {participant}")
+        c.drawString(100, 730, f"This is to certify that")
+        c.drawString(100, 710, f"{participant}")
+        c.drawString(100, 690, f"has successfully attended the event.")
+        c.drawString(400, 690, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+        # Save the PDF modifications
+        c.save()
+
+        # Update the output PDF file with the modified page
+        output_pdf_writer = PdfWriter()
+        output_pdf_writer.addPage(output_pdf.getPage(page_num))
+        output_pdf_writer.write(output_file)
+
+    return output_path
 
 def generate_email_content(name):
     html_body=""" <!DOCTYPE html>
@@ -99,7 +111,7 @@ def send_email(to_email, body,certificate_path):
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587
     smtp_username = 'chandrukongari@gmail.com'
-    smtp_password = 'pchb hgym fowb pdbf'
+    smtp_password = 'adga tyeq punc hkfa'
 
     # Create the email message
     message = MIMEMultipart()
@@ -123,6 +135,8 @@ def send_email(to_email, body,certificate_path):
 
 # Read participant data from CSV
 filePath='Email Certificate Automation\Participants-List.csv'
+template_path='Email Certificate Automation\Certificate Template.pdf'
+output_folder='Email Certificate Automation\Output certificate'
 participant_data = read_participant_data(filePath)
 
 # Iterate through participants and send personalized emails
@@ -130,9 +144,7 @@ for index, row in participant_data.iterrows():
     participant_name = row['Name']
     participant_email = row['Email']    
     html_mail=generate_email_content(participant_name)   
-    certificate_path = generate_certificate(participant_name)
-    send_email(participant_email, html_mail,certificate_path)
-
-   
+    certificate_path = generate_certificate(template_path, output_folder,participant_name)
+    send_email(participant_email, html_mail,certificate_path)   
 
 print('Emails sent successfully!')
