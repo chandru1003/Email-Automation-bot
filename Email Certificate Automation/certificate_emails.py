@@ -1,17 +1,54 @@
 import os
-from PyPDF2 import PdfWriter, PdfFileReader
 import smtplib
+import pandas as pd
+from datetime import datetime
 from email.mime.text import MIMEText
+from PyPDF2 import PdfWriter, PdfFileReader
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-import pandas as pd
-from reportlab.pdfgen import canvas
-from datetime import datetime
+
 
 # Function to read participant data from CSV
 def read_participant_data(file_path):
     return pd.read_csv(file_path)
 
+
+def replace_placeholders(template_pdf, replacements):
+    for page_num in range(len(template_pdf.pages)):
+        template_page = template_pdf.pages[page_num]
+        content = template_page.extract_text()
+        
+        for key, value in replacements.items():
+            content = content.replace(f"<{key}>", str(value))
+
+        template_page.mergePage(template_page)
+    
+    return template_pdf
+
+def generate_certificate(template_path, output_folder, participant):
+    # Create a PDF document by merging the template with participant details
+    output_path = os.path.join(output_folder, f"{participant}_Certificate.pdf")
+
+    with open(template_path, 'rb') as template_file, open(output_path, 'wb') as output_file:
+        template_pdf = PdfFileReader(template_file)
+        output_pdf_writer = PdfWriter()
+
+        # Replace placeholders in the template
+        modified_pdf = replace_placeholders(template_pdf, {
+            "name": participant,
+            "date": datetime.now().strftime('%Y-%m-%d'),
+        })
+        print(modified_pdf)
+        # Add modified pages to the output PDF
+        for page_num in range(modified_pdf.getNumPages()):
+            output_pdf_writer.addPage(modified_pdf.getPage(page_num))
+
+        # Save the modified PDF
+        output_pdf_writer.write(output_file)
+
+    return output_path
+
+'''
 def generate_certificate(template_path, output_folder, participant):
     # Create a PDF document by merging the template with participant details
     output_path = os.path.join(output_folder, f"{participant}_Certificate.pdf")
@@ -43,7 +80,7 @@ def generate_certificate(template_path, output_folder, participant):
         output_pdf_writer.write(output_file)
 
     return output_path
-
+'''
 def generate_email_content(name):
     html_body=""" <!DOCTYPE html>
 <html lang="en">
@@ -111,7 +148,7 @@ def send_email(to_email, body,certificate_path):
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587
     smtp_username = 'chandrukongari@gmail.com'
-    smtp_password = 'adga tyeq punc hkfa'
+    smtp_password = 'nonq qhue mcxe szae'
 
     # Create the email message
     message = MIMEMultipart()
